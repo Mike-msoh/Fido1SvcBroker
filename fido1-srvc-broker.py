@@ -113,7 +113,7 @@ fido_plan_b = {
 # Generate unique service ID
 fido_service_id=uuid.uuid4()
 fido_service = {
-                    'id': fido_service_id, 'name': 'fido1-service',
+                    'id': fido_service_id, 'name': 'sds-fido1-service',
                     'description': 'fido service to showcase management of private brokers',
                     'bindable': True, 
                     'tags' : ['private'], 
