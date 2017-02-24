@@ -1,1 +1,1 @@
-web: python bmx-sample-broker.py
+web: python fido1-srvc-broker.py

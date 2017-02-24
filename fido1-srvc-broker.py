@@ -1,32 +1,3 @@
-###############################################################
-#
-# Copyright 2016,2017 IBM Corp
-# Author: data-henrik
-#
-# See LICENSE file for license
-#
-###############################################################
-#
-# Simple broker for demonstrating how to register
-# Custom Service Brokers:
-# - Standard Private Broker
-# - Space-scoped Private Broker
-#
-# In the related tutorial (README) we show how to use this broker
-# with IBM Bluemix.
-# The code is kept as simple as possible (from our view...).
-#
-# See http://docs.cloudfoundry.org/services/api.html for the
-# Cloud Foundry Broker API Documentation
-#
-# This file has three sections:
-# - Functions related to the service broker
-# - Few functions to simulate service-specific functionality
-#   like the service dashboard
-# - Catch-all route to provide HTML output and point to the 
-#   GitHub repository
-###############################################################
-
 # Importing some necessary libraries
 import os                      # to obtain environment info
 from flask import Flask,jsonify,request,abort,make_response
@@ -35,15 +6,15 @@ import json
 import uuid
 
 # Which API version do we support?
-X_BROKER_API_VERSION = 2.0
+X_BROKER_API_VERSION = 2.11
 X_BROKER_API_VERSION_NAME = 'X-Broker-Api-Version'
 
 # Start Flask
 app = Flask(__name__)
 
 # Configure our test username
-app.config['BASIC_AUTH_USERNAME'] = 'test'
-app.config['BASIC_AUTH_PASSWORD'] = 'test'
+app.config['BASIC_AUTH_USERNAME'] = 'fido-user'
+app.config['BASIC_AUTH_PASSWORD'] = 'fido-pwd'
 # Switch off pretty printing of JSON data
 app.config['JSONIFY_PRETTYPRINT_REGULAR']=False
 
@@ -62,42 +33,89 @@ else:
     service_base = "localhost:5000"
 
 
-
-# service endpoint templates
-#service_instance = "http://"+service_base+"/pseudo-service/{{instance_id}}"
-service_instance = "http://"+service_base+"/pseudo-service/"
-#service_binding = "http://"+service_base+"/pseudo-service/{{instance_id}}/{{binding_id}}"
-#service_dashboard = "http://"+service_base+"/pseudo-service/dashboard/{{instance_id}}"
-service_dashboard = "http://"+service_base+"/pseudo-service/dashboard/"
+service_instance = "http://"+service_base+"/fido-service/"
+service_dashboard = "http://"+service_base+"/fido-service/dashboard/"
 
 # plans
-big_plan = {
-          "id": uuid.uuid4(),
-          "name": "large",
-          "description": "A large dedicated service with a big storage quota, lots of RAM, and many connections",
-          "free": True
-        }
+fido_plan_a = {
+                "name":"fidoplana",
+                "description":"Describe the characteristics of this plan. For example, Dedicated schema and tablespace per service instance on a shared server. 1GB and 10GB of compressed database storage can hold up to 5GB and 50GB of uncompressed data respectively based on typical compression ratios.",
+                "free":True,
+                "id":uuid.uuid4(), # SHOULD BE UNIQUE
+                "metadata":{
+                   "bullets":[
+                      "A description of the resources that can be used with the plan.",
+                      "1 Auth Module per instance. Can host 100 concurrent auth operation.",
+                      "1 GB Min per instance. 10 GB Max per instance.",
+                   ],
+                   "costs":[
+                      {
+                         "unitId":"INSTANCES_PER_MONTH",
+                         "unit":"MONTHLY",
+                         "partNumber":""
+                      }
+                   ],
+                   "displayName":"fidoPlanA"
+                }
+             }
 
-small_plan = {
-          "id": uuid.uuid4(),
-          "name": "small",
-          "free": True,
-          "description": "A small shared service with a small storage quota and few connections"
-        }
+fido_plan_b = {
+                "name":"fidoplanb",
+                "description":"Describe the characteristics of this plan. For example, Dedicated schema and tablespace per service instance on a shared server. 1GB and 10GB of compressed database storage can hold up to 5GB and 50GB of uncompressed data respectively based on typical compression ratios.",
+                "free":True,
+                "id":uuid.uuid4(), # SHOULD BE UNIQUE
+                "metadata":{
+                   "bullets":[
+                      "A description of the resources that can be used with the plan.",
+                      "10 Auth Module per instance. Can host 1000 concurrent auth operation.",
+                      "10 GB Min per instance. 100 GB Max per instance.",
+                   ],
+                   "costs":[
+                      {
+                         "unitId":"INSTANCES_PER_MONTH",
+                         "unit":"MONTHLY",
+                         "partNumber":""
+                      }
+                   ],
+                   "displayName":"fidoPlanB"
+                }
+             }
+
 
 # services
 # Generate unique service ID
-pseudo_service_id=uuid.uuid4()
-pseudo_service = {'id': pseudo_service_id, 'name': 'pseudo-service',
-                         'description': 'Pseudo Service to showcase management of private brokers',
-                         'bindable': True, 'tags' : ['private'], 'plans': [small_plan, big_plan],
-                         'dashboard_client': {'id': uuid.uuid4(), 'secret': 'secret-1',
-                         'redirect_uri' : 'http://bluemix.net' },
-                         'metadata' : {'displayName':'Pseudo Service',
-                         'longDescription' : 'really long description here like that this is a great showcase of brokers',
-                         'providerDisplayName' : 'data-henrik', 'documentationUrl' : 'http://ibm-bluemix.github.io',
-                         'supportUrl': 'https://stackoverflow.com/questions/tagged/ibm-bluemix'}}
-
+fido_service_id=uuid.uuid4()
+fido_service = {
+                    'id': fido_service_id, 'name': 'fido1-service',
+                    'description': 'fido service to showcase management of private brokers',
+                    'bindable': True, 
+                    'tags' : ['private'], 
+                    'plans': [fido_plan_a, fido_plan_b],
+                    'dashboard_client': {'id': uuid.uuid4(), 'secret': 'secret-1', 'redirect_uri' : 'http://bluemix.net' },
+                    'metadata':{
+                        'displayName':'Fido Service',
+                        'serviceMonitorApi':'https://cf-upsi-app.mybluemix.net/healthcheck',
+                        'providerDisplayName':'S.D.S',
+                        'longDescription':'Write full description of fido service',
+                        'bullets':[
+                            {
+                               'title':'Fast and Simple',
+                               'description':'FIDO Service uses dynamic in-memory columnar technology and innovations, such as parallel vector processing and actionable compression to rapidly scan and return relevant data.'
+                            },
+                            {
+                               'title':'Connectivity',
+                               'description':'FIDO Service is built to let you connect easily and to all of your services and applications. You can start analyzing your data immediately with familiar tools.'
+                            }
+                         ],
+                         'featuredImageUrl':'https://cf-upsi-app.mybluemix.net/images/fidoimg-64x64.png',
+                         'imageUrl':'https://cf-upsi-app.mybluemix.net/images/fidoimg-50x50.png',
+                         'mediumImageUrl':'https://cf-upsi-app.mybluemix.net/images/fidoimg-32x32.png',
+                         'smallImageUrl':'https://cf-upsi-app.mybluemix.net/images/fidoimg-24x24.png',
+                         'documentationUrl':'http://www.samsungsds.com/us/en/solutions/off/nex/nexsign.html',
+                         'instructionsUrl':'http://www.samsungsds.com/us/en/solutions/off/nex/nexsign.html',
+                         'termsUrl':'https://media.termsfeed.com/pdf/terms-and-conditions-template.pdf'
+                    }
+                }
 
 ########################################################
 # Implement Cloud Foundry Broker API
@@ -130,7 +148,7 @@ def catalog():
     # Check broker API version
     if not api_version or float(api_version) < X_BROKER_API_VERSION:
         abort(412, "Precondition failed. Missing or incompatible %s. Expecting version %0.1f or later" % (X_BROKER_API_VERSION_NAME, X_BROKER_API_VERSION))
-    services={"services": [pseudo_service]}
+    services={"services": [fido_service]}
     return jsonify(services)
 
 
@@ -168,6 +186,9 @@ def provision(instance_id):
 
     # return basic service information
     new_service={"dashboard_url": service_dashboard+instance_id}
+    # new_service={
+    #      "dashboard\_url": "http://my-bmx-mobile-app.mybluemix.net",
+    #      "operation": "task\_10"}
     return jsonify(new_service)
 
 
@@ -257,19 +278,19 @@ def unbind(instance_id, binding_id):
 #
 ########################################################
 
-@app.route('/pseudo-service/<instance_id>', methods=['PUT','GET','DELETE'])
+@app.route('/fido-service/<instance_id>', methods=['PUT','GET','DELETE'])
 def provision_service(instance_id):
     service_info={"greeting" : instance_id}
     return jsonify(service_info)
 
-@app.route('/pseudo-service/dashboard/<instance_id>', methods=['GET'])
+@app.route('/fido-service/dashboard/<instance_id>', methods=['GET'])
 def dashboard(instance_id):
     # hardcoded HTML, but could be a rendered template, too
-    dashboard_page="<h3>Greetings, oh cloud enthusiast!</h3> You discovered the dashboard... :)"
+    dashboard_page="<img src='http://www.optimisationv.com/english/wp-content/uploads/2011/05/solution-nexsign.jpg' /><h3>Greetings, oh cloud enthusiast!</h3> You discovered the dashboard... :)"
     return dashboard_page
 
 
-@app.route('/pseudo-service/<instance_id>/<binding_id>', methods=['PUT','GET','DELETE'])
+@app.route('/fido-service/<instance_id>/<binding_id>', methods=['PUT','GET','DELETE'])
 def bind_service(instance_id, binding_id):
     if request.headers['Content-Type'] != 'application/json':
         abort(415, 'Unsupported Content-Type: expecting application/json')
@@ -286,9 +307,9 @@ def bind_service(instance_id, binding_id):
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
-    page = '<title>Pseudo Broker</title>'
-    page += '<h1>Pseudo Broker</h1>'
-    page += '<p>See <a href="https://github.com/IBM-Bluemix/Bluemix-ServiceBroker">the related GitHub repository</a> for details.</p>'
+    page = '<title>fido Broker</title>'
+    page += '<h1>fido Broker</h1>'
+    page += '<p>See <a href="https://github.com/jeongkm/fido-srvc-broker">the related GitHub repository</a> for details.</p>'
     page += '<p>You requested path: /%s </p>' % path
     return page
 
