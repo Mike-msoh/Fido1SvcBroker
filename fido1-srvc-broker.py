@@ -5,6 +5,33 @@ from flask_basicauth import BasicAuth
 import json
 import uuid
 
+## DB Setup 
+db_name = 'FidoSvcBrokerDB'
+client = None
+db = None
+
+if 'VCAP_SERVICES' in os.environ:
+    vcap = json.loads(os.getenv('VCAP_SERVICES'))
+    print('Found VCAP_SERVICES')
+    if 'cloudantNoSQLDB' in vcap:
+        creds = vcap['cloudantNoSQLDB'][0]['credentials']
+        user = creds['username']
+        password = creds['password']
+        url = 'https://' + creds['host']
+        client = Cloudant(user, password, url=url, connect=True)
+        db = client.create_database(db_name, throw_on_exists=False)
+elif os.path.isfile('vcap-local.json'):
+    with open('vcap-local.json') as f:
+        vcap = json.load(f)
+        print('Found local VCAP_SERVICES')
+        creds = vcap['services']['cloudantNoSQLDB'][0]['credentials']
+        user = creds['username']
+        password = creds['password']
+        url = 'https://' + creds['host']
+        client = Cloudant(user, password, url=url, connect=True)
+        db = client.create_database(db_name, throw_on_exists=False)
+
+
 # Which API version do we support?
 X_BROKER_API_VERSION = 2.11
 X_BROKER_API_VERSION_NAME = 'X-Broker-Api-Version'
@@ -180,6 +207,18 @@ def provision(instance_id):
         abort(415, 'Unsupported Content-Type: expecting application/json')
     # get the JSON document in the BODY
     provision_details = request.get_json(force=True)
+
+
+    # Save API Key and RP ID from FidoAdmin
+    print("In provision instance_id : " + instance_id)
+    if client:
+        apikey_data = {'API_Key':'1234567890'}
+        rp_id = {'rp_id':'0987654321'}
+        db.create_document(apikey_data)
+        db.create_document(rp_id)
+    else:
+        print('No database')
+
 
     # provision the service by calling out to the service itself
     # not done here to keep the code simple for the tutorial
