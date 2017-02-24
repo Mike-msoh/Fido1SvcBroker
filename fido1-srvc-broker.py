@@ -2,6 +2,7 @@
 import os                      # to obtain environment info
 from flask import Flask,jsonify,request,abort,make_response
 from flask_basicauth import BasicAuth
+from cloudant import Cloudant
 import json
 import uuid
 
